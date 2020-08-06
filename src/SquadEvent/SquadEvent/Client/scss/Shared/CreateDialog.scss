@@ -1,0 +1,16 @@
+﻿div.e-dialog.e-popup.create-dialog {
+    @include media-breakpoint-down(xs) {
+        width: 95%;
+        max-height: 95%;
+    }
+
+    @include media-breakpoint-between(sm, sm) {
+        width: 80%;
+        max-height: 80%;
+    }
+
+    @include media-breakpoint-up(md) {
+        width: 700px;
+        max-height: 80%;
+    }
+}

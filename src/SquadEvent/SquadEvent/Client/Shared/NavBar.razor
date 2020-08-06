@@ -1,0 +1,91 @@
+﻿<!-- header-section declaration -->
+    <div class="d-flex flex-row" id="header-section">
+        <div class="header-style nav-menu" @onclick="@Toggle"><i class="fas fa-bars" id="hamburger"></i></div>
+        <div class="header-style nav-pane flex-grow-1"><b>Squad.Event</b></div>
+        <div class="d-none d-md-block border-left"></div>
+        <div class="header-style nav-create" @onclick="@OpenCreate">
+            <i class="fas fa-plus"></i>
+            <span class="ml-1 d-none d-md-inline"><b>Create</b></span>
+        </div>
+        <div class="d-none d-md-block border-left"></div>
+        <div class="header-style d-none d-md-block pr-0"><b>@UserContext.UserIdentity.Name</b></div>
+        <div class="header-style nav-avatar"><img src="@UserContext.UserClaims.GetDiscordAvatar()" class="rounded" /></div>
+    </div>
+<!-- end of header-section -->
+<!-- sidebar element declaration -->
+<SfSidebar HtmlAttributes="@HtmlAttribute"
+           Width="290px"
+           Target=".main-content"
+           @ref="Sidebar"
+           MediaQuery="(min-width:600px)"
+           Type=@SidebarType.Auto>
+    <ChildContent>
+        <div class="main-menu">
+            <div class="table-content px-5 py-3">
+                <p class="main-menu-header">TABLE OF CONTENTS</p>
+            </div>
+            <div>
+                <SfTreeView CssClass="main-treeview" @ref="TreeView" ExpandOn="@Expand" TValue="TreeData">
+                    <TreeViewFieldsSettings
+                        Id="nodeId"
+                        Text="nodeText"
+                        IconCss="iconCss"
+                        DataSource="treedata"
+                        HasChildren="hasChild"
+                        ParentID="pid"
+                        NavigateUrl="navigateUrl">
+                    </TreeViewFieldsSettings>
+                </SfTreeView>
+            </div>
+        </div>
+    </ChildContent>
+</SfSidebar>
+<!-- end of sidebar element -->
+<CreateDialog CreateDialogBridge="CreateDialogBridge" />
+
+@code {
+
+    [CascadingParameter]
+    public IUserContext UserContext { get; set; }
+
+    SfTreeView<TreeData> TreeView;
+    SfSidebar Sidebar;
+    public ExpandOnSettings Expand = ExpandOnSettings.Click;
+
+    Dictionary<string, object> HtmlAttribute = new Dictionary<string, object>()
+    {
+        {"class", "sidebar-treeview"}
+    };
+
+    public void Toggle()
+    {
+        this.Sidebar.Toggle();
+    }
+
+    public void OpenCreate()
+    {
+        CreateDialogBridge?.InvokeOpenCreate();
+    }
+
+    public class TreeData
+    {
+        public string nodeId { get; set; }
+        public string nodeText { get; set; }
+        public string iconCss { get; set; }
+        public bool hasChild { get; set; }
+        public string pid { get; set; }
+        public string navigateUrl { get; set; }
+    }
+
+    private List<TreeData> treedata = new List<TreeData>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        treedata.Add(new TreeData {nodeId = "10", nodeText = "Sign out", iconCss = "fas fa-sign-out-alt", navigateUrl = "/auth/signout"});
+    }
+
+    public List<MenuItem> AccountMenuItems { get; set; }
+    public CreateDialogBridge CreateDialogBridge { get; set; } = new CreateDialogBridge();
+}

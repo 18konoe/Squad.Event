@@ -1,0 +1,36 @@
+﻿@inherits LayoutComponentBase
+@inject IServiceProvider Services
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="main">
+    <CascadingValue Value="UserContext">
+        @if (UserContext.UserIdentity?.IsAuthenticated == true)
+        {
+            <NavBar/>
+        }
+        <div class="main-content">
+            <div class="sidebar-content">
+                @Body
+            </div>
+        </div>
+    </CascadingValue>
+</div>
+
+@code {
+    public IUserContext UserContext { get; set; } = new UserContext();
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAuthenticationStateAsync();
+    }
+
+    private async Task RefreshAuthenticationStateAsync()
+    {
+        var authenticationState = await this.authenticationStateTask;
+        UserContext.UserIdentity = authenticationState?.User?.Identity;
+        UserContext.UserClaims = authenticationState?.User?.Claims;
+    }
+}

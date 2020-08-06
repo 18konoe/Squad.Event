@@ -1,0 +1,159 @@
+﻿@inject HttpClient Client
+
+<SfDialog @bind-Visible="@IsVisible" CssClass="create-dialog" ShowCloseIcon="true" IsModal="true">
+    <DialogTemplates>
+        <Header>
+            <div>Create new Event</div>
+        </Header>
+        <Content>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                        <SfTextBox Placeholder="Event Title" FloatLabelType="@FloatLabelType.Auto" @bind-Value="@EventTitle"></SfTextBox>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                        <SfTextBox Multiline=true Placeholder="Event Description" FloatLabelType="@FloatLabelType.Auto" @bind-Value="@EventDescription"></SfTextBox>
+                    </div>
+                </div>
+
+                <div class="row">
+                    @foreach (DateTime element in EventCandidates)
+                    {
+                        <div class="date-picked-wrapper">
+                            <div class="date-picked">
+                                <span class="date-picked-string">@element.ToString(@"MM/dd")</span>
+                                <a href="#" class="date-picked-close" @onclick="@(() => OnClosePickedDate(element))">x</a>
+                            </div>
+                        </div>
+                    }
+                    <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                        <SfCalendar TValue="DateTime?"
+                                    IsMultiSelection=true
+                                    Min="@DateTime.Today"
+                                    Max="@(DateTime.Today + TimeSpan.FromDays(365))"
+                                    Depth="CalendarView.Month"
+                                    @bind-Value="@DateValue"
+                                    @bind-Values="@EventCandidates"
+                                    @ref="@Calendar">
+                            <CalendarEvents TValue="DateTime?" ValueChange="@onChange"></CalendarEvents>
+                        </SfCalendar>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                        <SfTextBox Placeholder="Password" @bind-Value="@PasswordString" Type="password"></SfTextBox>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                        <p>Title: @EventTitle</p>
+                        <p>Description: @EventDescription</p>
+                        <p>Password: @PasswordString</p>
+                        <p>Result: @Result</p>
+                        <p>Date count: @EventCandidates.Length</p>
+                    </div>
+                </div>
+            </div>
+        </Content>
+        <FooterTemplate>
+            <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+                <button type="button" class="btn btn-primary" @onclick="@SendClickAsync">Send</button>
+            </div>
+        </FooterTemplate>
+    </DialogTemplates>
+</SfDialog>
+
+@code {
+    [Parameter]
+    public CreateDialogBridge CreateDialogBridge { get; set; }
+
+    [CascadingParameter]
+    private IUserContext UserContext { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+    public string EventTitle { get; set; }
+    public string EventDescription { get; set; }
+    public string PasswordString { get; set; }
+    public string Result { get; set; }
+    public DateTime? DateValue { get; set; } = null;
+    public DateTime MinDate { get; set; } = DateTime.Today;
+    public DateTime MaxDate { get; set; } = DateTime.Today + TimeSpan.FromDays(365);
+    public DateTime[] EventCandidates { get; set; } = Array.Empty<DateTime>();
+    public SfCalendar<DateTime?> Calendar { get; set; }
+    protected override void OnInitialized()
+    {
+        CreateDialogBridge.OnOpenCreate += (sender, args) =>
+        {
+            IsVisible = true;
+        };
+    }
+
+    private async Task SendClickAsync()
+    {
+        var candidates = new List<DateTimeOffset>();
+
+        var ev = new EventModel();
+        ev.Name = EventTitle;
+        ev.Description = EventDescription;
+        Sha256HashString hash = new Sha256HashString(UserContext.UserClaims.GetDiscordUserId(), PasswordString);
+        ev.HashedPassword = hash.ToString();
+        foreach (var eventCandidate in EventCandidates)
+        {
+            ev.Dates.Add(eventCandidate);
+        }
+        ev.Originator = UserContext.UserClaims.GetDiscordUserId();
+        ev.State = EventState.Open;
+        var response = await Client.PostAsJsonAsync(@"/api/Create", ev);
+        var result = await response.Content.ReadFromJsonAsync<EventIdResponse>();
+        Result = result.Id;
+    }
+    public class DateToString
+    {
+        public string Name { get; set; }
+
+        public DateTime Date { get; set; }
+    }
+
+    public class Countries
+    {
+        public string Name { get; set; }
+
+        public DateTime Code { get; set; }
+    }
+
+    public List<Countries> Country { get; set; }
+
+    private void OnClosePickedDate(DateTime removed)
+    {
+        Calendar.NavigateTo(CalendarView.Month, removed.Date);
+        if (EventCandidates.Length > 1)
+        {
+            Calendar.RemoveDate(removed);
+        }
+        else
+        {
+            EventCandidates = Array.Empty<DateTime>();
+            if (removed.Date.Equals(DateTime.Today))
+            {
+                Calendar.NavigateTo(CalendarView.Month, DateTime.Today + TimeSpan.FromDays(1));
+            }
+            else
+            {
+                Calendar.NavigateTo(CalendarView.Month, DateTime.Today);
+            }
+        }
+    }
+    private void onChange(ChangedEventArgs<DateTime?> args)
+    {
+        if (EventCandidates.Length == 0)
+        {
+            DateValue = null;
+        }
+        StateHasChanged();
+    }
+}

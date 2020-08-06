@@ -1,0 +1,100 @@
+﻿@page "/Create"
+@using System.Net
+@using System.Text.Json
+@using SquadEvent.Shared.Models
+@using SquadEvent.Shared.Parameters
+@using SquadEvent.Shared.Utilities
+@inject HttpClient Client
+
+<h3>Create</h3>
+
+<AuthorizeView>
+    <Authorized>
+        <text>Hello, @context.User.Identity.Name!</text>
+        <a href="/auth/signout">Log out</a>
+    </Authorized>
+    <NotAuthorized>
+        <a href="/auth/signin">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <SfTextBox Placeholder="Event Title" FloatLabelType="@FloatLabelType.Auto" @bind-Value="@EventTitle"></SfTextBox>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <SfTextBox Multiline=true Placeholder="Event Description" FloatLabelType="@FloatLabelType.Auto" @bind-Value="@EventDescription"></SfTextBox>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <SfCalendar TValue="DateTime?" IsMultiSelection=true Min="@MinDate" Max="@MaxDate" @bind-Values="@EventCandidates"></SfCalendar>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <SfTextBox Placeholder="Password" @bind-Value="@PasswordString" Type="password"></SfTextBox>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <button type="button" class="btn btn-primary" @onclick="@SendClickAsync">Send</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-lg-12 col-md-12">
+            <p>Title: @EventTitle</p>
+            <p>Description: @EventDescription</p>
+            <p>Password: @PasswordString</p>
+            <p>Result: @Result</p>
+            <p>Date count: @EventCandidates.Length</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private IUserContext UserContext { get; set; }
+
+    public string EventTitle { get; set; }
+    public string EventDescription { get; set; }
+    public string PasswordString { get; set; }
+    public string Result { get; set; }
+
+    public DateTime MinDate { get; set; } = DateTime.Today;
+    public DateTime MaxDate { get; set; } = DateTime.Today + TimeSpan.FromDays(365);
+    public DateTime[] EventCandidates { get; set; } = Array.Empty<DateTime>();
+
+    protected override void OnInitialized()
+    {
+    }
+
+    private async Task SendClickAsync()
+    {
+        var candidates = new List<DateTimeOffset>();
+
+        var ev = new EventModel();
+        ev.Name = EventTitle;
+        ev.Description = EventDescription;
+        Sha256HashString hash = new Sha256HashString(UserContext.UserClaims.GetDiscordUserId(), PasswordString);
+        ev.HashedPassword = hash.ToString();
+        foreach (var eventCandidate in EventCandidates)
+        {
+            ev.Dates.Add(eventCandidate);
+        }
+        ev.Originator = UserContext.UserClaims.GetDiscordUserId();
+        ev.State = EventState.Open;
+        var result = await Client.PostJsonAsync<EventIdResponse>(@"/api/Create", ev);
+        Result = result.Id;
+    }
+
+}
+
+

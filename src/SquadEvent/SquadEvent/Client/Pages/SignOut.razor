@@ -1,0 +1,29 @@
+﻿@page "/auth/signout"
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Client
+
+@code {
+    [CascadingParameter]
+    public IUserContext UserContext { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Client != null)
+        {
+            var result = await Client.PostAsJsonAsync<string>("/auth/signout", null);
+            await (AuthStateProvider as AppAuthenticationStateProvider)?.RefreshAsync();
+            var authenticationState = await this.authenticationStateTask;
+            UserContext.UserIdentity = authenticationState?.User?.Identity;
+            UserContext.UserClaims = authenticationState?.User?.Claims;
+        }
+        if (RuntimeInformation.OSDescription == "web")
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

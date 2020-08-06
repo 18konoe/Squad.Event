@@ -1,0 +1,73 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.DependencyInjection
+@using SquadEvent.Client.Services
+@inherits LayoutComponentBase
+@inject IServiceProvider Services
+@inject AuthenticationStateProvider AuthStateProvider
+@inject HttpClient Client
+@attribute [Authorize]
+
+@if (UserContext.UserIdentity?.IsAuthenticated == true)
+{
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+}
+
+<div class="main">
+    <div class="top-row px-4">
+        @if (UserContext.UserIdentity?.IsAuthenticated == true)
+        {
+            <text>Hello, @UserContext.UserIdentity.Name!</text>
+            <a href="/auth/signout" @onclick="OnClickSignOut">Log out</a>
+        }
+        else
+        {
+            <a href="/auth/signin">Log in</a>
+        }
+        <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+    </div>
+
+    <div class="content px-4">
+        <CascadingValue Value="UserContext">
+            @Body
+        </CascadingValue>
+    </div>
+</div>
+
+@code {
+    public IUserContext UserContext { get; set; } = new UserContext();
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    private HttpClient HttpClient;
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.HttpClient = this.Services.GetService<HttpClient>();
+        await RefreshAuthenticationStateAsync();
+    }
+
+    private void UIContext_StateHasChanged(object sender, EventArgs args)
+    {
+        this.StateHasChanged();
+    }
+
+    private async Task RefreshAuthenticationStateAsync()
+    {
+        var authenticationState = await this.authenticationStateTask;
+        UserContext.UserIdentity = authenticationState?.User?.Identity;
+        UserContext.UserClaims = authenticationState?.User?.Claims;
+    }
+
+    private async Task OnClickSignOut()
+    {
+        if (this.HttpClient != null)
+        {
+            await this.HttpClient.PostJsonAsync("/Auth/SignOut", null);
+            await (AuthStateProvider as AppAuthenticationStateProvider)?.RefreshAsync();
+            await RefreshAuthenticationStateAsync();
+        }
+    }
+}

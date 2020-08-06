@@ -1,0 +1,13 @@
+﻿@using  System.Runtime.InteropServices
+@inject NavigationManager NavigationManager
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        if (RuntimeInformation.OSDescription == "web")
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

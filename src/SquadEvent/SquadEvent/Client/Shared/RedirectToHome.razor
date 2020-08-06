@@ -1,0 +1,13 @@
+﻿@inject NavigationManager NavigationManager
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        if (RuntimeInformation.OSDescription == "web")
+        {
+            StateHasChanged();
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

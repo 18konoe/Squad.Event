@@ -1,0 +1,75 @@
+﻿@page "/Test"
+@inject NavigationManager NavManager
+
+<div>ID = @currentValue</div>
+<a href="/">Top</a>
+<div>ChangedDt = @ChangedDt</div>
+<div>DtValue = @DtValue</div>
+<div>RemoveType = @RemoveType</div>
+
+<SfCalendar TValue="DateTime?"
+            IsMultiSelection=true
+            Min="@DateTime.Today"
+            Max="@(DateTime.Today + TimeSpan.FromDays(365))"
+            Depth="@CalendarView.Month"
+            @bind-Value="@DtValue"
+            @bind-Values="@Candidates"
+            @ref="@Calendar">
+    <CalendarEvents TValue="DateTime?" ValueChange="@onChange"></CalendarEvents>
+</SfCalendar>
+
+<div id="date-picked-wrapper">
+    @foreach (DateTime element in Candidates)
+    {
+        <div class="date-picked">
+            <span class="date-picked-string" @onclick="@(() => OnClosePickedDate(element))">@element.ToString(@"MM/dd")</span>
+        </div>
+    }
+</div>
+
+@code {
+    public string currentValue = null;
+
+    protected override void OnInitialized()
+    {
+        NavManager.TryGetQueryString<string>("id", out currentValue);
+    }
+
+    public SfCalendar<DateTime?> Calendar { get; set; }
+    public DateTime? DtValue { get; set; } = null;
+    public DateTime[] Candidates { get; set; } = Array.Empty<DateTime>();
+    public DateTime? ChangedDt { get; set; }
+    public int? RemoveType { get; set; } = null;
+    private void OnClosePickedDate(DateTime removed)
+    {
+        Calendar.NavigateTo(CalendarView.Month, removed.Date);
+        if (Candidates.Length > 1)
+        {
+            Calendar.RemoveDate(removed);
+            RemoveType = 1;
+        }
+        else
+        {
+            Candidates = Array.Empty<DateTime>();
+            if (removed.Date.Equals(DateTime.Today))
+            {
+                Calendar.NavigateTo(CalendarView.Month, DateTime.Today + TimeSpan.FromDays(1));
+                RemoveType = 2;
+            }
+            else
+            {
+                Calendar.NavigateTo(CalendarView.Month, DateTime.Today);
+                RemoveType = 3;
+            }
+        }
+    }
+    private void onChange(ChangedEventArgs<DateTime?> args)
+    {
+        ChangedDt = args.Value;
+        if (Candidates.Length == 0)
+        {
+            DtValue = null;
+        }
+        StateHasChanged();
+    }
+}

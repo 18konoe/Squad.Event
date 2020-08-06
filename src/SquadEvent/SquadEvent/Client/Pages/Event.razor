@@ -1,0 +1,27 @@
+﻿@page "/event/{EventId}"
+
+<AuthorizeView>
+
+    <Authorized>
+        <h1>@EventId</h1>
+        <p><i class="fas fa-user"></i> Hello World</p>
+        Welcome to your new app.
+
+        <SurveyPrompt Title="How is Blazor working for you?" />
+        
+        <a href="/Test">TestPage</a>
+        
+    </Authorized>
+
+    <NotAuthorized>
+        <About />
+    </NotAuthorized>
+
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public string EventId { get; set; }
+
+    
+}

@@ -1,0 +1,65 @@
+﻿@import 'bootstrap-v4.5/bootstrap.scss';
+@import 'Shared/MainLayout.scss';
+@import 'Shared/NavBar.scss';
+@import 'Shared/CreateDialog.scss';
+
+.loading {
+    font-family: 'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif;
+    color: #88a;
+    font-size: 18px;
+    text-align: center;
+    width: 150px;
+    height: 150px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto
+}
+
+.loading::after {
+    content: '';
+    border: solid 10px;
+    border-color: #88a #eee #eee;
+    border-radius: 60px;
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    animation: rotation 1.5s linear 0s infinite
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(45deg)
+    }
+
+    100% {
+        transform: rotate(405deg)
+    }
+}
+
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
